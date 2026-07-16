@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>欢迎使用 CHQ Portal</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #12121a;
+      --text: #f5f5f7;
+      --text-secondary: #a1a1a6;
+      --text-tertiary: #6e6e73;
+      --gold: #c9a227;
+      --gold-light: #e8d5a3;
+      --rose: #b76e79;
+      --border: rgba(255,255,255,0.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 60px 40px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .hero {
+      text-align: center;
+      margin-bottom: 60px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, #8a6d1f, #c9a227, #b76e79);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: 0 12px 40px rgba(201, 162, 39, 0.25);
+    }
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--rose));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .section {
+      margin-bottom: 48px;
+    }
+    .section h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section h2 .icon {
+      font-size: 1.5rem;
+    }
+    .section p {
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+    .feature-card:hover {
+      border-color: rgba(201, 162, 39, 0.2);
+      transform: translateY(-2px);
+    }
+    .feature-card h3 {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--gold);
+    }
+    .feature-card p {
+      font-size: 0.8125rem;
+      color: var(--text-tertiary);
+      margin: 0;
+    }
+    .shortcut-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 0.875rem;
+    }
+    .shortcut-table th,
+    .shortcut-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .shortcut-table th {
+      color: var(--text-tertiary);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .shortcut-table td {
+      color: var(--text-secondary);
+    }
+    kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: "SF Mono", monospace;
+      font-size: 0.75rem;
+      color: var(--text);
+    }
+    .footer {
+      margin-top: 60px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+    }
+    .version-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(201, 162, 39, 0.1);
+      border: 1px solid rgba(201, 162, 39, 0.2);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: var(--gold);
+      font-family: "SF Mono", monospace;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="hero-logo">C</div>
+    <h1>CHQ Portal</h1>
+    <p>Richard Chen (ChenHongQiang) 研发知识库与项目展示中心</p>
+    <span class="version-badge">v1.0.0</span>
+  </div>
+
+  <div class="section">
+    <h2><span class="icon">👋</span> 欢迎使用</h2>
+    <p>CHQ Portal 是您的个人研发知识管理平台。您可以在这里浏览、管理和展示所有的 HTML 项目页面。</p>
+    <p>通过左侧导航栏或键盘快捷键，您可以快速在不同页面之间切换浏览。</p>
+  </div>
+
+  <div class="section">
+    <h2><span class="icon">✨</span> 核心功能</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h3>🎨 全球化美学设计</h3>
+        <p>融合苹果极简主义与欧莱雅高级感配色，打造极致视觉体验</p>
+      </div>
+      <div class="feature-card">
+        <h3>🔐 安全登录系统</h3>
+        <p>前端加密认证，支持记住登录状态，保护您的知识资产</p>
+      </div>
+      <div class="feature-card">
+        <h3>📑 翻页浏览</h3>
+        <p>支持键盘方向键、PageUp/Down、Shift+滚轮多种翻页方式</p>
+      </div>
+      <div class="feature-card">
+        <h3>🔍 智能搜索</h3>
+        <p>左侧边栏实时搜索，快速定位到任意页面</p>
+      </div>
+      <div class="feature-card">
+        <h3>🌓 主题切换</h3>
+        <p>深色/浅色双主题，按 T 键一键切换，自动记忆偏好</p>
+      </div>
+      <div class="feature-card">
+        <h3>📱 响应式布局</h3>
+        <p>适配桌面端和平板设备，随时随地访问您的知识库</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2><span class="icon">⌨️</span> 键盘快捷键</h2>
+    <table class="shortcut-table">
+      <thead>
+        <tr>
+          <th>快捷键</th>
+          <th>功能</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><kbd>←</kbd> <kbd>→</kbd></td>
+          <td>上一页 / 下一页</td>
+        </tr>
+        <tr>
+          <td><kbd>PageUp</kbd> <kbd>PageDown</kbd></td>
+          <td>上一页 / 下一页</td>
+        </tr>
+        <tr>
+          <td><kbd>Shift</kbd> + 滚轮</td>
+          <td>翻页浏览</td>
+        </tr>
+        <tr>
+          <td><kbd>Home</kbd> <kbd>End</kbd></td>
+          <td>跳转到第一页 / 最后一页</td>
+        </tr>
+        <tr>
+          <td><kbd>T</kbd></td>
+          <td>切换深色/浅色主题</td>
+        </tr>
+        <tr>
+          <td><kbd>Esc</kbd></td>
+          <td>退出登录</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2><span class="icon">🚀</span> 开始使用</h2>
+    <p>左侧导航栏展示了当前已集成的所有页面。点击任意页面即可在右侧内容区加载浏览。</p>
+    <p>如需添加新页面，请参考工程根目录下的 <strong>README.md</strong> 文件中的集成指南。</p>
+  </div>
+
+  <div class="footer">
+    <p>Copyright © 2026 CHQ Company. All rights reserved.</p>
+    <p>Author & Principal Architect: Richard Chen (ChenHongQiang)</p>
+    <p>本作品为 CHQ Company 的知识产权，受相关法律保护。</p>
+  </div>
+</body>
+</html>

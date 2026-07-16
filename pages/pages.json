@@ -1,0 +1,24 @@
+{
+  "version": "1.1.0",
+  "lastUpdated": "2026-07-16",
+  "pages": [
+    {
+      "id": "welcome",
+      "title": "欢迎使用 CHQ Portal",
+      "file": "pages/_welcome.html",
+      "category": "系统",
+      "version": "1.0.0",
+      "date": "2026-07-16",
+      "description": "CHQ Portal 框架欢迎页，展示系统概览和使用指南"
+    },
+    {
+      "id": "llm-compare-v15",
+      "title": "LLM 对比平台 v15.0",
+      "file": "pages/llm-compare-platform_v15.0.0.html",
+      "category": "LLM工具",
+      "version": "15.0.0",
+      "date": "2026-07-16",
+      "description": "全模型恢复 + 国产新势力，多维度大语言模型对比分析平台"
+    }
+  ]
+}

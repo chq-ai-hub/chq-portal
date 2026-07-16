@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - CHQ Portal</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #0a0a0f;
+      color: #f5f5f7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 40px;
+    }
+    .error-code {
+      font-size: 8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #e8d5a3, #c9a227, #b76e79);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 16px;
+      letter-spacing: -0.04em;
+    }
+    .error-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .error-desc {
+      color: #a1a1a6;
+      font-size: 0.9375rem;
+      max-width: 400px;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      background: linear-gradient(135deg, #8a6d1f, #c9a227);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(201, 162, 39, 0.3);
+    }
+    .back-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(201, 162, 39, 0.4);
+    }
+    .footer {
+      position: absolute;
+      bottom: 24px;
+      font-size: 0.75rem;
+      color: #6e6e73;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-code">404</div>
+  <h1 class="error-title">页面未找到</h1>
+  <p class="error-desc">
+    您访问的页面可能已被移除、更名或暂时不可用。
+    请检查 URL 是否正确，或返回首页重新浏览。
+  </p>
+  <a href="index.html" class="back-btn">← 返回首页</a>
+  <div class="footer">
+    Copyright © 2026 CHQ Company · Richard Chen (ChenHongQiang)
+  </div>
+</body>
+</html>

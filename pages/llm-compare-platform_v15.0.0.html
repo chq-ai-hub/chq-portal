@@ -1,0 +1,1987 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM 对比平台 · v15.0 (全模型恢复 + 国产新势力)</title>
+    <style>
+        /* ===== 全局样式 ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f4f9;
+            color: #1a2634;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-bar {
+            background: #ffffff;
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            height: 56px;
+            z-index: 10;
+        }
+        .top-bar .logo {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .top-bar .logo small {
+            font-size: 13px;
+            -webkit-text-fill-color: #64748b;
+            color: #64748b;
+            background: none;
+            font-weight: 400;
+        }
+        .top-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: none;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #f1f4f9;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .btn-primary { background: #1e293b; color: white; border-color: #1e293b; }
+        .btn-primary:hover { background: #0f172a; }
+        .btn-success { background: #0b7e4b; color: white; border-color: #0b7e4b; }
+        .btn-success:hover { background: #0a6a3f; }
+        .btn-outline { background: transparent; border: 1.5px solid #cbd5e1; }
+        .btn-outline:hover { background: #f8fafc; }
+        .btn-export { background: #0b7e4b; color: white; border-color: #0b7e4b; }
+        .btn-export:hover { background: #0a6a3f; }
+        .btn-warning { background: #d97706; color: white; border-color: #d97706; }
+        .btn-warning:hover { background: #b45309; }
+
+        .main-body { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+        /* 左侧边栏 */
+        .left-sidebar {
+            width: 220px;
+            background: #ffffff;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.25s ease;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .left-sidebar.collapsed { width: 0; border-right: none; margin-right: -1px; }
+        .sidebar-header {
+            padding: 14px 16px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #0f172a;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .sidebar-header .collapse-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #94a3b8;
+            padding: 0 4px;
+        }
+        .sidebar-header .collapse-btn:hover { color: #4f46e5; }
+        .sidebar-model-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px 0;
+        }
+        .sidebar-model-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 16px;
+            cursor: pointer;
+            transition: 0.1s;
+            border-left: 3px solid transparent;
+            gap: 8px;
+            font-size: 13px;
+        }
+        .sidebar-model-item:hover { background: #f1f5f9; }
+        .sidebar-model-item .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .status-dot.idle { background: #cbd5e1; }
+        .status-dot.success { background: #22c55e; }
+        .status-dot.error { background: #ef4444; }
+        .status-dot.loading { background: #f59e0b; animation: pulse 0.8s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .sidebar-model-item .model-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .sidebar-model-item .model-check { margin-left: auto; }
+        .sidebar-footer { padding: 10px 16px; border-top: 1px solid #e2e8f0; flex-shrink: 0; }
+        .sidebar-footer .btn { width: 100%; justify-content: center; }
+
+        .sidebar-expand-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0 30px 30px 0;
+            padding: 8px 6px 8px 4px;
+            cursor: pointer;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+            z-index: 20;
+            transition: 0.15s;
+            display: none;
+            font-size: 14px;
+            color: #475569;
+            line-height: 1;
+        }
+        .sidebar-expand-btn:hover { background: #f1f5f9; color: #4f46e5; }
+        .sidebar-expand-btn.left-expand { left: 0; border-left: none; }
+        .sidebar-expand-btn.right-expand { right: 0; border-radius: 30px 0 0 30px; border-right: none; padding: 8px 4px 8px 6px; }
+        .left-sidebar.collapsed ~ .sidebar-expand-btn.left-expand { display: block; }
+        .right-sidebar.collapsed ~ .sidebar-expand-btn.right-expand { display: block; }
+
+        /* 中间主区域 */
+        .center-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8fafc;
+            overflow: hidden;
+            min-width: 0;
+        }
+        .center-header {
+            padding: 10px 20px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .center-header .title { font-weight: 600; font-size: 14px; color: #0f172a; }
+        .center-header .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .model-cards-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 区域分隔线 */
+        .region-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 8px 0 12px 0;
+            margin: 4px 0;
+        }
+        .region-divider .line {
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+        }
+        .region-divider .label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #475569;
+            padding: 0 12px;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        /* 卡片 */
+        .model-card {
+            background: white;
+            border-radius: 14px;
+            border: 1px solid #e9edf2;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            transition: 0.15s;
+            cursor: grab;
+            user-select: none;
+        }
+        .model-card:active { cursor: grabbing; }
+        .model-card.dragging { opacity: 0.5; border-style: dashed; }
+        .model-card.drag-over { border-color: #4f46e5; background: #f0f4ff; }
+
+        .model-card-header {
+            display: flex;
+            align-items: center;
+            padding: 8px 14px 8px 16px;
+            gap: 10px;
+            flex-wrap: wrap;
+            cursor: pointer;
+            background: #fafcff;
+            border-bottom: 1px solid #e9edf2;
+            border-radius: 14px 14px 0 0;
+        }
+        .model-card-header:hover { background: #f1f5f9; }
+        .drag-handle { font-size: 14px; color: #94a3b8; cursor: grab; margin-right: 2px; }
+        .model-card-header .card-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .model-card-header .card-title .provider-badge {
+            font-size: 9px;
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 1px 8px;
+            border-radius: 30px;
+            font-weight: 600;
+        }
+        .model-card-header .card-title .star-rating {
+            font-size: 11px;
+            color: #f59e0b;
+            letter-spacing: 1px;
+        }
+        .model-card-header .card-status {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 12px;
+            border-radius: 30px;
+            background: #f1f5f9;
+            color: #64748b;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .card-status.success { background: #dcfce7; color: #166534; }
+        .card-status.error { background: #fee2e2; color: #991b1b; }
+        .card-status.loading { background: #fef3c7; color: #92400e; }
+        .card-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #475569;
+        }
+        .card-toggle input[type="checkbox"] { width: 15px; height: 15px; accent-color: #4f46e5; cursor: pointer; }
+        .card-expand-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: 0.2s;
+        }
+        .card-expand-btn.open { transform: rotate(180deg); }
+        .card-expand-btn:hover { color: #4f46e5; }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: 0.15s;
+        }
+        .delete-btn:hover { color: #b91c1c; }
+
+        .card-body { padding: 10px 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+        .card-config {
+            display: none;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 10px 14px;
+            border: 1px solid #e9edf2;
+        }
+        .card-config.open { display: flex; }
+        .card-config .config-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1 1 140px;
+            min-width: 100px;
+        }
+        .card-config .config-item label { font-size: 10px; font-weight: 600; color: #475569; white-space: nowrap; }
+        .card-config .config-item input,
+        .card-config .config-item select {
+            flex: 1;
+            padding: 3px 8px;
+            border: 1px solid #d1d9e6;
+            border-radius: 20px;
+            font-size: 11px;
+            font-family: inherit;
+            background: white;
+            min-width: 60px;
+        }
+        .card-config .config-item input:focus,
+        .card-config .config-item select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79,70,229,0.1);
+        }
+        .card-config .config-item input[type="password"] { font-family: 'Courier New', monospace; }
+
+        /* 响应区域 */
+        .card-response {
+            background: #fafcff;
+            border-radius: 10px;
+            padding: 10px 14px;
+            border: 1px solid #e9edf2;
+            min-height: 40px;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #1e293b;
+            position: relative;
+        }
+        .card-response .placeholder { color: #94a3b8; font-style: italic; }
+        .card-response .thinking-section {
+            background: #fefce8;
+            border-left: 3px solid #f59e0b;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin: 6px 0;
+            font-size: 13px;
+            color: #78350f;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .card-response .thinking-section .thinking-label {
+            font-weight: 600;
+            color: #92400e;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card-response .thinking-section .thinking-content {
+            display: none;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed #fde68a;
+        }
+        .card-response .thinking-section .thinking-content.open { display: block; }
+        .card-response .main-content {
+            font-size: 14px;
+            line-height: 1.7;
+            margin: 4px 0;
+        }
+        .card-response .agnes-image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin: 8px 0;
+        }
+        .card-response .agnes-image-grid .image-item {
+            position: relative;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+        .card-response .agnes-image-grid .image-item img {
+            width: 100%;
+            display: block;
+            cursor: pointer;
+        }
+        .card-response .agnes-image-grid .image-item .image-info {
+            padding: 4px 8px;
+            font-size: 10px;
+            color: #64748b;
+            background: #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-response .agnes-image-grid .image-item .copy-url-btn {
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 2px 8px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        .card-response .agnes-image-grid .image-item .copy-url-btn:hover { background: rgba(0,0,0,0.8); }
+        .card-response .image-generation-info {
+            font-size: 12px;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+        .card-response .agnes-video-info {
+            background: #eef2ff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #c7d2fe;
+            margin: 6px 0;
+        }
+        .card-response .agnes-video-info .video-id {
+            font-weight: 600;
+            color: #4f46e5;
+            font-size: 14px;
+        }
+        .card-response .agnes-video-info .video-status {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .card-response .agnes-video-info .video-status.queued { background: #fef3c7; color: #92400e; }
+        .card-response .agnes-video-info .video-status.processing { background: #dbeafe; color: #1d4ed8; }
+        .card-response .agnes-video-info .video-status.completed { background: #dcfce7; color: #166534; }
+        .card-response .agnes-video-info .video-status.failed { background: #fee2e2; color: #991b1b; }
+        .card-response .agnes-video-info .video-params {
+            font-size: 12px;
+            color: #475569;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed #c7d2fe;
+        }
+        .card-response .agnes-video-info .video-params span {
+            display: inline-block;
+            background: #f1f5f9;
+            padding: 1px 10px;
+            border-radius: 30px;
+            margin: 2px 4px 2px 0;
+            font-size: 11px;
+        }
+        .card-response .response-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 6px;
+            padding-top: 4px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        .card-response .response-meta span { display: flex; align-items: center; gap: 4px; }
+        .card-response .finish-reason {
+            font-size: 11px;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 2px 10px;
+            border-radius: 30px;
+            display: inline-block;
+        }
+        .card-response .copy-btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .card-response .copy-btn-group .copy-btn {
+            background: #eef2ff;
+            border: none;
+            border-radius: 30px;
+            padding: 2px 12px;
+            font-size: 11px;
+            color: #4f46e5;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .card-response .copy-btn-group .copy-btn:hover { background: #dbeafe; }
+        .card-response .detail-log {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: 'SF Mono', monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 6px;
+            display: none;
+        }
+        .card-response .detail-log.open { display: block; }
+
+        /* 右侧边栏 */
+        .right-sidebar {
+            width: 280px;
+            background: #ffffff;
+            border-left: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.25s ease;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .right-sidebar.collapsed { width: 0; border-left: none; margin-left: -1px; }
+        .right-header {
+            padding: 14px 18px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #0f172a;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .right-header .collapse-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #94a3b8;
+            padding: 0 4px;
+        }
+        .right-header .collapse-btn:hover { color: #4f46e5; }
+        .right-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 14px 18px;
+            gap: 12px;
+            overflow-y: auto;
+        }
+        .right-content textarea {
+            flex: 1;
+            min-height: 100px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 13px;
+            font-family: inherit;
+            resize: none;
+            background: #fafcff;
+            width: 100%;
+        }
+        .right-content textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+        }
+        .right-content .send-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .right-content .send-row .btn { flex: 1; justify-content: center; padding: 8px; }
+        .right-content .global-status {
+            font-size: 12px;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 3px 14px;
+            border-radius: 30px;
+            text-align: center;
+        }
+        .right-content .hint {
+            font-size: 11px;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        @media (max-width: 1024px) {
+            .left-sidebar { width: 180px; }
+            .right-sidebar { width: 230px; }
+        }
+        @media (max-width: 768px) {
+            .left-sidebar, .right-sidebar { width: 0 !important; border: none !important; margin: 0 !important; }
+            .main-body { flex-direction: column; }
+            .center-area { flex: 1; }
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15,23,42,0.5);
+            backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 24px;
+            padding: 28px 32px;
+            max-width: 460px;
+            width: 90%;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.2);
+            animation: slideUp 0.25s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal h2 { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+        .modal .form-group { margin-bottom: 12px; }
+        .modal .form-group label { display: block; font-weight: 600; font-size: 12px; color: #334155; margin-bottom: 3px; }
+        .modal .form-group input, .modal .form-group select {
+            width: 100%; padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 13px; font-family: inherit;
+        }
+        .modal .form-group input:focus, .modal .form-group select:focus {
+            outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+        }
+        .modal .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+        .modal .form-actions .btn { padding: 8px 22px; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="logo">🧠 LLM 对比 <small>v15.0 · 全模型恢复 + 国产新势力</small></div>
+        <div class="top-actions">
+            <button class="btn btn-export" id="exportExcelBtn">📊 导出Excel</button>
+            <button class="btn btn-export" id="exportDataBtn">📤 导出数据</button>
+            <button class="btn btn-export" id="importDataBtn">📥 导入数据</button>
+            <button class="btn btn-outline" id="resetAllBtn">🔄 重置</button>
+            <button class="btn btn-outline" id="clearAllResponsesBtn">🗑️ 清空回复</button>
+        </div>
+    </div>
+
+    <div class="main-body">
+
+        <div class="left-sidebar" id="leftSidebar">
+            <div class="sidebar-header">
+                <span>📋 模型列表</span>
+                <button class="collapse-btn" id="collapseLeftBtn">◀</button>
+            </div>
+            <div class="sidebar-model-list" id="sidebarModelList"></div>
+            <div class="sidebar-footer">
+                <button class="btn btn-primary" id="addModelBtn">➕ 添加模型</button>
+            </div>
+        </div>
+        <button class="sidebar-expand-btn left-expand" id="leftExpandBtn" title="展开左侧栏">▶</button>
+
+        <div class="center-area">
+            <div class="center-header">
+                <span class="title">📦 模型卡片（竖排 · 可拖拽排序）</span>
+                <div class="actions">
+                    <button class="btn btn-outline" id="expandAllConfigBtn">展开配置</button>
+                    <button class="btn btn-outline" id="collapseAllConfigBtn">收起配置</button>
+                </div>
+            </div>
+            <div class="model-cards-container" id="modelCardsContainer"></div>
+        </div>
+
+        <div class="right-sidebar" id="rightSidebar">
+            <div class="right-header">
+                <span>💬 对话窗口</span>
+                <button class="collapse-btn" id="collapseRightBtn">▶</button>
+            </div>
+            <div class="right-content">
+                <textarea id="globalPrompt" placeholder="输入你的问题，所有启用的模型将同时回答 ...">你好，请用中文介绍自己，并说出今天的日期。</textarea>
+                <div class="send-row">
+                    <button class="btn btn-success" id="sendAllBtn">🚀 发送</button>
+                    <span class="global-status" id="globalStatus">就绪</span>
+                </div>
+                <div class="hint">⏳ 无超时限制 · 数据自动保存本地</div>
+            </div>
+        </div>
+        <button class="sidebar-expand-btn right-expand" id="rightExpandBtn" title="展开右侧栏">◀</button>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2 id="modalTitle">添加新模型</h2>
+            <div class="form-group">
+                <label>模型名称（显示用）</label>
+                <input type="text" id="modalModelName" placeholder="例如：DeepSeek V4 Pro">
+            </div>
+            <div class="form-group">
+                <label>API Base URL</label>
+                <input type="text" id="modalBaseUrl" placeholder="https://api.deepseek.com/chat/completions">
+            </div>
+            <div class="form-group">
+                <label>模型标识 (model)</label>
+                <input type="text" id="modalModelId" placeholder="deepseek-v4-pro">
+            </div>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="modalApiKey" placeholder="sk-...">
+            </div>
+            <div class="form-group">
+                <label>预设模板</label>
+                <select id="modalPreset">
+                    <option value="">—— 自定义 ——</option>
+                    <!-- 国产 -->
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="qwen">通义千问 (Qwen)</option>
+                    <option value="glm">智谱AI (GLM)</option>
+                    <option value="doubao">豆包 (Doubao)</option>
+                    <option value="ernie">文心一言 (ERNIE)</option>
+                    <option value="kimi">月之暗面 (Kimi)</option>
+                    <option value="minimax">MiniMax</option>
+                    <option value="stepfun">阶跃星辰</option>
+                    <option value="yi">零一万物</option>
+                    <!-- 国外 -->
+                    <option value="agnes">Agnes (新加坡)</option>
+                    <option value="mistral">Mistral AI (法国)</option>
+                    <option value="chatgpt">OpenAI (ChatGPT)</option>
+                    <option value="gemini">Google (Gemini)</option>
+                    <option value="claude">Anthropic (Claude)</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-outline" id="modalCancelBtn">取消</button>
+                <button class="btn btn-primary" id="modalSaveBtn">✅ 保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        // ================================================================
+        // 1. 厂商模型配置（2026年7月最新，全部保留）
+        // ================================================================
+        const PROVIDER_MODELS = {
+            // ===== 国产模型 =====
+            deepseek: {
+                label: 'DeepSeek',
+                region: 'cn',
+                starRating: 5,
+                base: 'https://api.deepseek.com/chat/completions',
+                models: [
+                    { id: 'deepseek-v4-pro', label: 'deepseek-v4-pro (旗舰级, 1M上下文, ⭐⭐⭐⭐⭐)' },
+                    { id: 'deepseek-v4-flash', label: 'deepseek-v4-flash (性价比版, 1M上下文, ⭐⭐⭐⭐⭐)' },
+                    { id: 'deepseek-chat', label: '⚠️ deepseek-chat (旧版别名, 2026-07-24下线)' },
+                    { id: 'deepseek-reasoner', label: '⚠️ deepseek-reasoner (旧版别名, 2026-07-24下线)' }
+                ]
+            },
+            qwen: {
+                label: '通义千问 (Qwen)',
+                region: 'cn',
+                starRating: 5,
+                base: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+                models: [
+                    { id: 'qwen3.7-max', label: 'qwen3.7-max (旗舰级, 全球排名前列, ⭐⭐⭐⭐⭐)' },
+                    { id: 'qwen3.7-plus', label: 'qwen3.7-plus (全能均衡, ⭐⭐⭐)' },
+                    { id: 'qwen3.6-flash', label: 'qwen3.6-flash (轻量高并发, ⭐⭐)' },
+                    { id: 'qwen3-max', label: 'qwen3-max (旗舰系列)' },
+                    { id: 'qwen3-vl-plus', label: 'qwen3-vl-plus (视觉理解, ⭐⭐⭐⭐)' },
+                    { id: 'qwen-plus', label: 'qwen-plus (通用系列)' },
+                    { id: 'qwen-flash', label: 'qwen-flash (高性价比)' }
+                ]
+            },
+            glm: {
+                label: '智谱AI (GLM)',
+                region: 'cn',
+                starRating: 5,
+                base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+                models: [
+                    { id: 'glm-5.2', label: 'glm-5.2 (旗舰, 1M上下文, 长程SOTA, ⭐⭐⭐⭐⭐)' },
+                    { id: 'glm-5.1', label: 'glm-5.1 (自主工作8小时, ⭐⭐⭐⭐)' },
+                    { id: 'glm-5', label: 'glm-5 (Agentic Engineering基座, ⭐⭐⭐⭐)' },
+                    { id: 'glm-5-turbo', label: 'glm-5-turbo (OpenClaw场景优化, ⭐⭐⭐)' },
+                    { id: 'glm-5v-turbo', label: 'glm-5v-turbo (多模态Coding, ⭐⭐⭐⭐)' },
+                    { id: 'glm-4.7-flash', label: 'glm-4.7-flash (30B混合思考, 免费, ⭐⭐)' },
+                    { id: 'glm-4.6v-flash', label: 'glm-4.6v-flash (视觉, 免费)' }
+                ]
+            },
+            doubao: {
+                label: '豆包 (Doubao)',
+                region: 'cn',
+                starRating: 4,
+                base: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+                models: [
+                    { id: 'Doubao-Seed-2.1-Pro', label: 'Doubao-Seed-2.1-Pro (Coding/Agent/VLM, ⭐⭐⭐⭐)' },
+                    { id: 'Doubao-Seed-2.1-Turbo', label: 'Doubao-Seed-2.1-Turbo (高频调用, 价格减半, ⭐⭐⭐)' },
+                    { id: 'Doubao-Pro-128K', label: 'Doubao-Pro-128K (长上下文)' },
+                    { id: 'Doubao-Lite-32K', label: 'Doubao-Lite-32K (轻量高效, ⭐⭐)' },
+                    { id: 'Seedance-2.5', label: 'Seedance-2.5 (视频生成, 30秒直出, ⭐⭐⭐⭐⭐)' },
+                    { id: 'Seedream-5.0-Pro', label: 'Seedream-5.0-Pro (图像生成, 交互式编辑, ⭐⭐⭐)' }
+                ]
+            },
+            ernie: {
+                label: '文心一言 (ERNIE)',
+                region: 'cn',
+                starRating: 4,
+                base: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/',
+                models: [
+                    { id: 'ERNIE-5.1', label: 'ERNIE-5.1 (全模态, 2.4万亿参数, ⭐⭐⭐⭐)' },
+                    { id: 'ERNIE-4.5', label: 'ERNIE-4.5 (旗舰模型)' },
+                    { id: 'ERNIE-4.0-Turbo', label: 'ERNIE-4.0-Turbo (高性价比)' },
+                    { id: 'ERNIE-Speed', label: 'ERNIE-Speed (轻量免费版)' }
+                ]
+            },
+            kimi: {
+                label: '月之暗面 (Kimi)',
+                region: 'cn',
+                starRating: 4,
+                base: 'https://api.moonshot.cn/v1/chat/completions',
+                models: [
+                    { id: 'kimi-k2.7-code', label: 'kimi-k2.7-code (1.1万亿参数, 编程专用, ⭐⭐⭐⭐)' },
+                    { id: 'kimi-k2.6', label: 'kimi-k2.6 (多模态理解)' }
+                ]
+            },
+            minimax: {
+                label: 'MiniMax',
+                region: 'cn',
+                starRating: 4,
+                base: 'https://api.minimaxi.com/v1/chat/completions',
+                models: [
+                    { id: 'MiniMax-M3', label: 'MiniMax-M3 (1M上下文, 原生多模态, 开源, ⭐⭐⭐⭐)' },
+                    { id: 'abab6.5s', label: 'abab6.5s (多模态)' }
+                ]
+            },
+            stepfun: {
+                label: '阶跃星辰 (StepFun)',
+                region: 'cn',
+                starRating: 3,
+                base: 'https://api.stepfun.com/v1/chat/completions',
+                models: [
+                    { id: 'step-3.7-flash', label: 'step-3.7-flash (生产级Agent, 400tokens/s, ⭐⭐⭐)' },
+                    { id: 'step-3.5-flash-2603', label: 'step-3.5-flash-2603 (高频编程/Agent)' }
+                ]
+            },
+            yi: {
+                label: '零一万物 (01.AI)',
+                region: 'cn',
+                starRating: 3,
+                base: 'https://api.01.ai/v1/chat/completions',
+                models: [
+                    { id: 'Yi-Large-Turbo', label: 'Yi-Large-Turbo (企业级应用, ⭐⭐⭐)' },
+                    { id: 'Yi-VL-6B', label: 'Yi-VL-6B (多模态理解)' }
+                ]
+            },
+
+            // ===== 国外模型（全部保留） =====
+            // Agnes 全部模型（文本+图像+视频）
+            agnes: {
+                label: 'Agnes (新加坡)',
+                region: 'global',
+                starRating: 4,
+                base: 'https://apihub.agnes-ai.com/v1/chat/completions',
+                models: [
+                    { id: 'agnes-2.0-flash', label: 'agnes-2.0-flash (文本, 256K上下文, ⭐⭐⭐⭐)' }
+                ]
+            },
+            agnes_image: {
+                label: 'Agnes Image (新加坡)',
+                region: 'global',
+                starRating: 4,
+                base: 'https://apihub.agnes-ai.com/v1/images/generations',
+                models: [
+                    { id: 'agnes-image-2.0-flash', label: 'agnes-image-2.0-flash (文生图/图生图, 免费, ⭐⭐⭐⭐)' },
+                    { id: 'agnes-image-2.1-flash', label: 'agnes-image-2.1-flash (高清图像生成, 免费, ⭐⭐⭐⭐)' }
+                ]
+            },
+            agnes_video: {
+                label: 'Agnes Video (新加坡)',
+                region: 'global',
+                starRating: 4,
+                base: 'https://apihub.agnes-ai.com/v1/videos',
+                models: [
+                    { id: 'agnes-video-v2.0', label: 'agnes-video-v2.0 (文生视频/图生视频, 免费, ⭐⭐⭐⭐)' }
+                ]
+            },
+            // Mistral 全系列
+            mistral: {
+                label: 'Mistral AI (法国)',
+                region: 'global',
+                starRating: 4,
+                base: 'https://api.mistral.ai/v1/chat/completions',
+                models: [
+                    { id: 'mistral-large-latest', label: 'mistral-large-latest (旗舰级, ⭐⭐⭐⭐)' },
+                    { id: 'mistral-medium-latest', label: 'mistral-medium-latest (性能平衡)' },
+                    { id: 'mistral-small-latest', label: 'mistral-small-latest (快速经济)' },
+                    { id: 'codestral-latest', label: 'codestral-latest (代码生成)' },
+                    { id: 'open-mistral-nemo', label: 'open-mistral-nemo (开源权重)' },
+                    { id: 'ministral-8b-latest', label: 'ministral-8b-latest (80亿参数)' },
+                    { id: 'ministral-3b-latest', label: 'ministral-3b-latest (最小模型)' }
+                ]
+            },
+            // OpenAI 全系列
+            chatgpt: {
+                label: 'OpenAI (ChatGPT)',
+                region: 'global',
+                starRating: 5,
+                base: 'https://api.openai.com/v1/chat/completions',
+                models: [
+                    { id: 'gpt-5.6-sol', label: 'gpt-5.6-sol (旗舰级, ⭐⭐⭐⭐⭐)' },
+                    { id: 'gpt-5.6-terra', label: 'gpt-5.6-terra (性能平衡, ⭐⭐⭐)' },
+                    { id: 'gpt-5.6-luna', label: 'gpt-5.6-luna (成本优化, ⭐⭐)' },
+                    { id: 'gpt-5.4', label: 'gpt-5.4 (专业工作+编码)' }
+                ]
+            },
+            // Google Gemini 全系列
+            gemini: {
+                label: 'Google (Gemini)',
+                region: 'global',
+                starRating: 5,
+                base: 'https://generativelanguage.googleapis.com/v1beta/models/MODEL_ID:generateContent?key=API_KEY',
+                models: [
+                    { id: 'gemini-3.5-flash', label: 'gemini-3.5-flash (最新GA, ⭐⭐⭐⭐⭐)' },
+                    { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro (最先进, 深度推理, ⭐⭐⭐⭐)' },
+                    { id: 'gemini-2.5-flash', label: 'gemini-2.5-flash (最佳性价比, ⭐⭐⭐)' },
+                    { id: 'gemini-3.1-flash-image', label: 'gemini-3.1-flash-image (原生视觉)' },
+                    { id: 'gemini-3-pro-image', label: 'gemini-3-pro-image (专业视觉)' }
+                ]
+            },
+            // Claude 全系列
+            claude: {
+                label: 'Anthropic (Claude)',
+                region: 'global',
+                starRating: 5,
+                base: 'https://api.anthropic.com/v1/messages',
+                models: [
+                    { id: 'claude-fable-5', label: 'claude-fable-5 (最强, 2026-06, ⭐⭐⭐⭐⭐)' },
+                    { id: 'claude-opus-4-8', label: 'claude-opus-4-8 (复杂编码, ⭐⭐⭐⭐)' },
+                    { id: 'claude-sonnet-5', label: 'claude-sonnet-5 (速度智能平衡, ⭐⭐⭐⭐)' },
+                    { id: 'claude-haiku-4-5', label: 'claude-haiku-4-5 (最快, ⭐⭐⭐)' },
+                    { id: 'claude-mythos-5', label: 'claude-mythos-5 (有限可用)' }
+                ]
+            }
+        };
+
+        // 预设模板（用于模态框快速填充）
+        const PRESETS = {
+            deepseek: { name: 'DeepSeek', base: 'https://api.deepseek.com/chat/completions', model: 'deepseek-v4-pro', key: '' },
+            qwen: { name: '通义千问 (Qwen)', base: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model: 'qwen3.7-max', key: '' },
+            glm: { name: '智谱AI (GLM)', base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-5.2', key: '' },
+            doubao: { name: '豆包 (Doubao)', base: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', model: 'Doubao-Seed-2.1-Pro', key: '' },
+            ernie: { name: '文心一言 (ERNIE)', base: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/', model: 'ERNIE-5.1', key: '' },
+            kimi: { name: '月之暗面 (Kimi)', base: 'https://api.moonshot.cn/v1/chat/completions', model: 'kimi-k2.7-code', key: '' },
+            minimax: { name: 'MiniMax', base: 'https://api.minimaxi.com/v1/chat/completions', model: 'MiniMax-M3', key: '' },
+            stepfun: { name: '阶跃星辰 (StepFun)', base: 'https://api.stepfun.com/v1/chat/completions', model: 'step-3.7-flash', key: '' },
+            yi: { name: '零一万物 (01.AI)', base: 'https://api.01.ai/v1/chat/completions', model: 'Yi-Large-Turbo', key: '' },
+            agnes: { name: 'Agnes (新加坡)', base: 'https://apihub.agnes-ai.com/v1/chat/completions', model: 'agnes-2.0-flash', key: '' },
+            // 注意：Agnes image/video 在预设中单独加，但为了简洁我们只保留主文本入口，用户可自行添加其他
+            mistral: { name: 'Mistral AI (法国)', base: 'https://api.mistral.ai/v1/chat/completions', model: 'mistral-large-latest', key: '' },
+            chatgpt: { name: 'OpenAI (ChatGPT)', base: 'https://api.openai.com/v1/chat/completions', model: 'gpt-5.6-sol', key: '' },
+            gemini: { name: 'Google (Gemini)', base: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=', model: 'gemini-3.5-flash', key: '' },
+            claude: { name: 'Anthropic (Claude)', base: 'https://api.anthropic.com/v1/messages', model: 'claude-fable-5', key: '' }
+        };
+
+        // 区域排序
+        const REGION_ORDER = ['cn', 'global'];
+        const REGION_LABELS = {
+            cn: '🇨🇳 国产模型',
+            global: '🌍 国外模型'
+        };
+
+        // ================================================================
+        // 2. 状态管理 + localStorage
+        // ================================================================
+        let models = [];
+        let nextId = Date.now();
+        let isSending = false;
+        let dragData = null;
+        const STORAGE_KEY = 'llm_platform_v15_data';
+
+        function saveToLocalStorage() {
+            try {
+                const data = {
+                    models: models.map(m => ({
+                        id: m.id,
+                        name: m.name,
+                        base: m.base,
+                        model: m.model,
+                        key: m.key,
+                        providerKey: m.providerKey,
+                        providerLabel: m.providerLabel,
+                        region: m.region,
+                        starRating: m.starRating,
+                        enabled: m.enabled,
+                        response: m.response,
+                        time: m.time,
+                        status: m.status,
+                        expandedConfig: m.expandedConfig,
+                        raw: m.raw
+                    })),
+                    nextId: nextId
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {}
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return false;
+                const data = JSON.parse(raw);
+                if (!data.models || !Array.isArray(data.models)) return false;
+                models = data.models.map(m => ({
+                    ...m,
+                    expandedConfig: m.expandedConfig || false,
+                    raw: m.raw || null,
+                    region: m.region || 'global',
+                    starRating: m.starRating || 3
+                }));
+                nextId = data.nextId || Date.now();
+                return true;
+            } catch (e) { return false; }
+        }
+
+        // ================================================================
+        // 3. DOM引用
+        // ================================================================
+        const leftSidebar = document.getElementById('leftSidebar');
+        const rightSidebar = document.getElementById('rightSidebar');
+        const sidebarModelList = document.getElementById('sidebarModelList');
+        const modelCardsContainer = document.getElementById('modelCardsContainer');
+        const globalPrompt = document.getElementById('globalPrompt');
+        const sendAllBtn = document.getElementById('sendAllBtn');
+        const globalStatus = document.getElementById('globalStatus');
+        const resetAllBtn = document.getElementById('resetAllBtn');
+        const clearAllResponsesBtn = document.getElementById('clearAllResponsesBtn');
+        const addModelBtn = document.getElementById('addModelBtn');
+        const expandAllConfigBtn = document.getElementById('expandAllConfigBtn');
+        const collapseAllConfigBtn = document.getElementById('collapseAllConfigBtn');
+        const collapseLeftBtn = document.getElementById('collapseLeftBtn');
+        const collapseRightBtn = document.getElementById('collapseRightBtn');
+        const leftExpandBtn = document.getElementById('leftExpandBtn');
+        const rightExpandBtn = document.getElementById('rightExpandBtn');
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const importDataBtn = document.getElementById('importDataBtn');
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalModelName = document.getElementById('modalModelName');
+        const modalBaseUrl = document.getElementById('modalBaseUrl');
+        const modalModelId = document.getElementById('modalModelId');
+        const modalApiKey = document.getElementById('modalApiKey');
+        const modalPreset = document.getElementById('modalPreset');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        const modalSaveBtn = document.getElementById('modalSaveBtn');
+        let editingModelId = null;
+
+        // ================================================================
+        // 4. 渲染函数
+        // ================================================================
+        function renderAll() {
+            renderSidebar();
+            renderCards();
+            updateGlobalStatus();
+            saveToLocalStorage();
+        }
+
+        function renderSidebar() {
+            sidebarModelList.innerHTML = '';
+            models.forEach((model) => {
+                const div = document.createElement('div');
+                div.className = 'sidebar-model-item';
+                const dotClass = model.status || 'idle';
+                const stars = '⭐'.repeat(Math.min(model.starRating || 3, 5));
+                div.innerHTML = `
+                    <span class="status-dot ${dotClass}"></span>
+                    <span class="model-name">${model.name} ${stars}</span>
+                    <span class="model-check">
+                        <input type="checkbox" ${model.enabled ? 'checked' : ''} class="sidebar-toggle" data-id="${model.id}">
+                    </span>
+                `;
+                const toggle = div.querySelector('.sidebar-toggle');
+                toggle.addEventListener('change', (e) => {
+                    const m = models.find(mm => mm.id === parseInt(e.target.dataset.id));
+                    if (m) { m.enabled = e.target.checked; renderAll(); }
+                });
+                sidebarModelList.appendChild(div);
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function copyToClipboard(text) {
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(() => {
+                globalStatus.textContent = '✅ 已复制';
+                setTimeout(updateGlobalStatus, 1500);
+            }).catch(() => {
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        function renderStars(rating) {
+            return '⭐'.repeat(Math.min(rating || 3, 5));
+        }
+
+        // ================================================================
+        // 4a. Agnes 响应生成器（完整保留所有功能）
+        // ================================================================
+        function generateAgnesResponseHTML(model) {
+            if (!model.raw) {
+                return '<span class="placeholder">等待回复...</span>';
+            }
+            const data = model.raw;
+            const providerKey = model.providerKey || '';
+
+            // 图像模型（Agnes Image 或 Doubao Seedream）
+            if (providerKey === 'agnes_image' || (providerKey === 'doubao' && model.model && model.model.includes('Seedream'))) {
+                const images = data?.data || [];
+                if (images.length > 0) {
+                    let html = `<div class="image-generation-info">🖼️ 生成 ${images.length} 张图片</div>`;
+                    html += `<div class="agnes-image-grid">`;
+                    images.forEach((img, idx) => {
+                        const src = img.url || img.b64_json || '';
+                        if (src) {
+                            html += `<div class="image-item">
+                                <img src="${src}" alt="生成图片 ${idx+1}" loading="lazy" onclick="window.open('${src}', '_blank')" />
+                                <div class="image-info">
+                                    <span>#${idx+1}</span>
+                                    ${img.revised_prompt ? `<span style="font-size:9px;color:#94a3b8;">${escapeHtml(img.revised_prompt.slice(0, 30))}...</span>` : ''}
+                                    <button class="copy-url-btn" onclick="copyToClipboard('${escapeHtml(src)}')">📋复制URL</button>
+                                </div>
+                            </div>`;
+                        }
+                    });
+                    html += `</div>`;
+                    const allUrls = images.map(img => img.url || img.b64_json).filter(Boolean).join('\n');
+                    html += `<div class="copy-btn-group">
+                        <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(allUrls)}')">📋 复制所有图片URL</button>
+                        <button class="copy-btn" onclick="document.getElementById('log-${model.id}').classList.toggle('open')">📋 显示/隐藏日志</button>
+                        <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(JSON.stringify(data, null, 2))}')">📋 复制完整日志</button>
+                    </div>`;
+                    html += `<div class="detail-log" id="log-${model.id}">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
+                    return html;
+                } else {
+                    let html = `<div class="placeholder">⚠️ 未生成图片，请检查提示词或参数</div>`;
+                    html += `<div class="copy-btn-group">
+                        <button class="copy-btn" onclick="document.getElementById('log-${model.id}').classList.toggle('open')">📋 显示/隐藏日志</button>
+                        <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(JSON.stringify(data, null, 2))}')">📋 复制完整日志</button>
+                    </div>`;
+                    html += `<div class="detail-log" id="log-${model.id}">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
+                    return html;
+                }
+            }
+
+            // 视频模型（Agnes Video 或 Doubao Seedance）
+            if (providerKey === 'agnes_video' || (providerKey === 'doubao' && model.model && model.model.includes('Seedance'))) {
+                const videoId = data?.video_id || data?.task_id || '';
+                const status = data?.status || 'queued';
+                const videoUrl = data?.video_url || '';
+                const queryUrl = videoId ? `https://apihub.agnes-ai.com/agnesapi?video_id=${videoId}` : '';
+                let html = `<div class="agnes-video-info">
+                    <div><span class="video-id">🎬 视频ID: ${videoId || 'N/A'}</span>
+                        ${videoId ? `<button class="copy-btn" style="background:transparent;border:none;color:#4f46e5;cursor:pointer;" onclick="copyToClipboard('${videoId}')">📋</button>` : ''}
+                    </div>
+                    <div>状态: <span class="video-status ${status.toLowerCase()}">${status}</span></div>`;
+                if (videoUrl) {
+                    html += `<div style="margin-top:6px;">
+                        📹 视频地址: <a href="${videoUrl}" target="_blank" style="color:#4f46e5;word-break:break-all;">${videoUrl}</a>
+                        <button class="copy-btn" style="background:transparent;border:none;color:#4f46e5;cursor:pointer;" onclick="copyToClipboard('${videoUrl}')">📋</button>
+                    </div>`;
+                }
+                if (queryUrl) {
+                    html += `<div style="margin-top:6px;font-size:12px;color:#64748b;">
+                        💡 查询地址: <span style="word-break:break-all;">${queryUrl}</span>
+                        <button class="copy-btn" style="background:transparent;border:none;color:#4f46e5;cursor:pointer;" onclick="copyToClipboard('${queryUrl}')">📋复制</button>
+                    </div>`;
+                }
+                if (data?.error) {
+                    html += `<div style="color:#ef4444;font-size:12px;margin-top:4px;">❌ 错误: ${data.error}</div>`;
+                }
+                html += `</div>`;
+                html += `<div class="copy-btn-group">
+                    ${videoId ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(videoId)}')">📋 复制视频ID</button>` : ''}
+                    ${videoUrl ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(videoUrl)}')">📋 复制视频地址</button>` : ''}
+                    <button class="copy-btn" onclick="document.getElementById('log-${model.id}').classList.toggle('open')">📋 显示/隐藏日志</button>
+                    <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(JSON.stringify(data, null, 2))}')">📋 复制完整日志</button>
+                </div>`;
+                html += `<div class="detail-log" id="log-${model.id}">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
+                return html;
+            }
+
+            // 文本模型（含思考过程）
+            const choice = data?.choices?.[0];
+            const message = choice?.message || {};
+            const reasoning = message.reasoning_content || '';
+            const content = message.content || '';
+            const finishReason = choice?.finish_reason || '';
+            const usage = data?.usage || {};
+            const modelId = data?.model || '';
+            const id = data?.id || '';
+
+            let html = '';
+            if (reasoning) {
+                html += `<div class="thinking-section">
+                    <div class="thinking-label" onclick="this.nextElementSibling.classList.toggle('open')">
+                        🧠 思考过程 (点击展开/收起)
+                    </div>
+                    <div class="thinking-content open">${escapeHtml(reasoning)}</div>
+                </div>`;
+            }
+            if (content) {
+                html += `<div class="main-content">${escapeHtml(content)}</div>`;
+            } else if (!reasoning && !content) {
+                html += `<div class="placeholder">无文本内容</div>`;
+            }
+            let metaParts = [];
+            if (finishReason) metaParts.push(`<span class="finish-reason">⏹️ ${finishReason}</span>`);
+            if (usage?.prompt_tokens !== undefined) metaParts.push(`📊 输入: ${usage.prompt_tokens} / 输出: ${usage.completion_tokens} / 总计: ${usage.total_tokens}`);
+            if (modelId) metaParts.push(`📦 ${modelId}`);
+            if (id) metaParts.push(`🆔 ${id}`);
+            if (metaParts.length) html += `<div class="response-meta">${metaParts.map(p => `<span>${p}</span>`).join('')}</div>`;
+
+            const replyText = content || reasoning || '（无内容）';
+            html += `<div class="copy-btn-group">
+                <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(replyText)}')">📋 复制回复</button>
+                <button class="copy-btn" onclick="document.getElementById('log-${model.id}').classList.toggle('open')">📋 显示/隐藏日志</button>
+                <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(JSON.stringify(data, null, 2))}')">📋 复制完整日志</button>
+            </div>`;
+            html += `<div class="detail-log" id="log-${model.id}">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
+            return html;
+        }
+
+        // 普通模型响应生成器
+        function generateDefaultResponseHTML(model) {
+            let html = model.response || '<span class="placeholder">等待回复...</span>';
+            if (model.time) html += `<div class="response-meta"><span>⏱️ ${model.time}s</span></div>`;
+            html += `<div class="copy-btn-group">
+                <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(model.response || '')}')">📋 复制回复</button>
+                ${model.raw ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(JSON.stringify(model.raw, null, 2))}')">📋 复制日志</button>` : ''}
+            </div>`;
+            if (model.raw) html += `<div class="detail-log" id="log-${model.id}">${escapeHtml(JSON.stringify(model.raw, null, 2))}</div>`;
+            return html;
+        }
+
+        function renderCards() {
+            modelCardsContainer.innerHTML = '';
+            models.forEach(m => { if (m.expandedConfig === undefined) m.expandedConfig = false; });
+
+            // 排序：先国产后国外
+            const sorted = [...models].sort((a, b) => {
+                const order = { cn: 0, global: 1 };
+                return (order[a.region] || 1) - (order[b.region] || 1);
+            });
+
+            let lastRegion = null;
+            sorted.forEach((model) => {
+                if (model.region && model.region !== lastRegion) {
+                    lastRegion = model.region;
+                    const div = document.createElement('div');
+                    div.className = 'region-divider';
+                    div.innerHTML = `
+                        <span class="line"></span>
+                        <span class="label">${REGION_LABELS[model.region] || model.region}</span>
+                        <span class="line"></span>
+                    `;
+                    modelCardsContainer.appendChild(div);
+                }
+
+                const card = document.createElement('div');
+                card.className = 'model-card';
+                card.draggable = true;
+                card.dataset.id = model.id;
+
+                let statusText = '待命', statusClass = '';
+                if (model.status === 'success') { statusText = '✅ 成功'; statusClass = 'success'; }
+                else if (model.status === 'error') { statusText = '❌ 失败'; statusClass = 'error'; }
+                else if (model.status === 'loading') { statusText = '⏳ 请求中...'; statusClass = 'loading'; }
+
+                const isAgnes = model.providerKey && (model.providerKey.startsWith('agnes') || model.providerKey === 'doubao');
+                let responseHTML = isAgnes ? generateAgnesResponseHTML(model) : generateDefaultResponseHTML(model);
+
+                const configOpenClass = model.expandedConfig ? 'open' : '';
+                const providerKey = model.providerKey || '';
+                const stars = renderStars(model.starRating || 3);
+
+                let modelOptions = '';
+                if (providerKey && PROVIDER_MODELS[providerKey]) {
+                    const pm = PROVIDER_MODELS[providerKey];
+                    pm.models.forEach(m => {
+                        const selected = m.id === model.model ? 'selected' : '';
+                        modelOptions += `<option value="${m.id}" ${selected}>${m.label}</option>`;
+                    });
+                } else {
+                    modelOptions = `<option value="${model.model}">${model.model}</option>`;
+                }
+
+                card.innerHTML = `
+                    <div class="model-card-header">
+                        <span class="drag-handle">⠿</span>
+                        <span class="card-title">
+                            ${model.name}
+                            <span class="provider-badge">${model.providerLabel || ''}</span>
+                            <span class="star-rating">${stars}</span>
+                        </span>
+                        <span class="card-status ${statusClass}" title="${statusText}">${statusText}</span>
+                        <label class="card-toggle">
+                            <input type="checkbox" class="card-enable" ${model.enabled ? 'checked' : ''}>
+                            启用
+                        </label>
+                        <button class="card-expand-btn ${model.expandedConfig ? 'open' : ''}" title="展开配置">▼</button>
+                        <button class="delete-btn" title="删除">✕</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-config ${configOpenClass}">
+                            <div class="config-item">
+                                <label>厂商</label>
+                                <select class="config-provider">
+                                    <option value="">-- 自定义 --</option>
+                                    ${Object.keys(PROVIDER_MODELS).map(k => {
+                                        const pm = PROVIDER_MODELS[k];
+                                        const regionLabel = pm.region === 'cn' ? '🇨🇳' : '🌍';
+                                        return `<option value="${k}" ${k === providerKey ? 'selected' : ''}>${regionLabel} ${pm.label}</option>`;
+                                    }).join('')}
+                                </select>
+                            </div>
+                            <div class="config-item">
+                                <label>Base URL</label>
+                                <input type="text" class="config-base" value="${model.base}" placeholder="API地址">
+                            </div>
+                            <div class="config-item" style="flex:2;">
+                                <label>Model</label>
+                                <select class="config-model-select">
+                                    ${modelOptions}
+                                </select>
+                                <input type="text" class="config-model" value="${model.model}" placeholder="自定义模型名" style="display:none; flex:1; min-width:60px;">
+                            </div>
+                            <div class="config-item">
+                                <label>API Key</label>
+                                <input type="password" class="config-key" value="${model.key}" placeholder="sk-...">
+                            </div>
+                        </div>
+                        <div class="card-response" id="response-${model.id}">
+                            ${responseHTML}
+                        </div>
+                    </div>
+                `;
+
+                modelCardsContainer.appendChild(card);
+
+                // 事件绑定（与 v13 保持一致）
+                const modelId = model.id;
+                card.addEventListener('dragstart', (e) => { dragData = { id: modelId }; card.classList.add('dragging'); });
+                card.addEventListener('dragend', (e) => { card.classList.remove('dragging'); document.querySelectorAll('.model-card.drag-over').forEach(el => el.classList.remove('drag-over')); });
+                card.addEventListener('dragover', (e) => { e.preventDefault(); card.classList.add('drag-over'); });
+                card.addEventListener('dragleave', () => { card.classList.remove('drag-over'); });
+                card.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    card.classList.remove('drag-over');
+                    if (!dragData) return;
+                    const sourceId = dragData.id;
+                    const targetId = modelId;
+                    if (sourceId === targetId) return;
+                    const si = models.findIndex(m => m.id === sourceId);
+                    const ti = models.findIndex(m => m.id === targetId);
+                    if (si === -1 || ti === -1) return;
+                    const [removed] = models.splice(si, 1);
+                    models.splice(ti, 0, removed);
+                    renderAll();
+                    dragData = null;
+                });
+
+                const header = card.querySelector('.model-card-header');
+                const expandBtn = card.querySelector('.card-expand-btn');
+                const toggleConfig = (e) => {
+                    if (e.target.closest('.card-toggle') || e.target.closest('.delete-btn') || e.target.closest('.card-expand-btn')) return;
+                    const m = models.find(mm => mm.id === modelId);
+                    if (m) { m.expandedConfig = !m.expandedConfig; renderCards(); }
+                };
+                header.addEventListener('click', toggleConfig);
+                expandBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const m = models.find(mm => mm.id === modelId);
+                    if (m) { m.expandedConfig = !m.expandedConfig; renderCards(); }
+                });
+
+                const enableCb = card.querySelector('.card-enable');
+                enableCb.addEventListener('change', (e) => {
+                    const m = models.find(mm => mm.id === modelId);
+                    if (m) { m.enabled = e.target.checked; renderAll(); }
+                });
+
+                const delBtn = card.querySelector('.delete-btn');
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (confirm(`确定删除模型 “${model.name}” 吗？`)) {
+                        models = models.filter(m => m.id !== modelId);
+                        renderAll();
+                    }
+                });
+
+                const configProvider = card.querySelector('.config-provider');
+                const configBase = card.querySelector('.config-base');
+                const configModelSelect = card.querySelector('.config-model-select');
+                const configModelInput = card.querySelector('.config-model');
+                const configKey = card.querySelector('.config-key');
+
+                configProvider.addEventListener('change', () => {
+                    const m = models.find(mm => mm.id === modelId);
+                    if (!m) return;
+                    const pk = configProvider.value;
+                    m.providerKey = pk;
+                    if (pk && PROVIDER_MODELS[pk]) {
+                        const pm = PROVIDER_MODELS[pk];
+                        m.providerLabel = pm.label;
+                        m.base = pm.base;
+                        m.region = pm.region || 'global';
+                        m.starRating = pm.starRating || 3;
+                        configBase.value = pm.base;
+                        let opts = '';
+                        pm.models.forEach(mm => { opts += `<option value="${mm.id}">${mm.label}</option>`; });
+                        configModelSelect.innerHTML = opts;
+                        configModelSelect.style.display = '';
+                        configModelInput.style.display = 'none';
+                        m.model = pm.models[0]?.id || '';
+                        configModelSelect.value = m.model;
+                    } else {
+                        m.providerLabel = '';
+                        m.region = 'global';
+                        m.starRating = 3;
+                        configModelSelect.style.display = 'none';
+                        configModelInput.style.display = '';
+                    }
+                    const badge = card.querySelector('.provider-badge');
+                    if (badge) badge.textContent = m.providerLabel || '';
+                    renderAll();
+                });
+
+                configModelSelect.addEventListener('change', () => {
+                    const m = models.find(mm => mm.id === modelId);
+                    if (m) { m.model = configModelSelect.value; configModelInput.value = m.model; renderAll(); }
+                });
+                configModelInput.addEventListener('input', () => {
+                    const m = models.find(mm => mm.id === modelId);
+                    if (m) { m.model = configModelInput.value; renderAll(); }
+                });
+                configBase.addEventListener('input', () => {
+                    const m = models.find(mm => mm.id === modelId);
+                    if (m) { m.base = configBase.value; renderAll(); }
+                });
+                configKey.addEventListener('input', () => {
+                    const m = models.find(mm => mm.id === modelId);
+                    if (m) { m.key = configKey.value; renderAll(); }
+                });
+            });
+        }
+
+        function updateGlobalStatus() {
+            const active = models.filter(m => m.enabled);
+            globalStatus.textContent = `就绪 (${active.length} 个启用)`;
+            saveToLocalStorage();
+        }
+
+        // ================================================================
+        // 5. 发送请求
+        // ================================================================
+        async function sendToAll() {
+            if (isSending) return;
+            const prompt = globalPrompt.value.trim();
+            if (!prompt) {
+                globalStatus.textContent = '⚠️ 请输入问题';
+                return;
+            }
+            const activeModels = models.filter(m => m.enabled);
+            if (activeModels.length === 0) {
+                globalStatus.textContent = '⚠️ 没有启用的模型';
+                return;
+            }
+
+            activeModels.forEach(m => {
+                m.response = '';
+                m.time = null;
+                m.status = 'loading';
+                m.raw = null;
+            });
+            renderAll();
+            globalStatus.textContent = `⏳ 发送中... (${activeModels.length}个)`;
+            isSending = true;
+            sendAllBtn.disabled = true;
+
+            const tasks = activeModels.map(async (model) => {
+                const start = Date.now();
+                try {
+                    const result = await callModelAPI(model, prompt);
+                    const elapsed = ((Date.now() - start) / 1000).toFixed(2);
+                    const currentModel = models.find(m => m.id === model.id);
+                    if (currentModel) {
+                        if (result.success) {
+                            currentModel.response = result.reply || '（空响应）';
+                            currentModel.time = elapsed;
+                            currentModel.status = 'success';
+                            currentModel.raw = result.rawData || null;
+                        } else {
+                            currentModel.response = `❌ 错误：${result.error}`;
+                            currentModel.time = elapsed;
+                            currentModel.status = 'error';
+                            currentModel.raw = result.rawData || null;
+                        }
+                        updateCardResponse(currentModel.id);
+                    }
+                } catch (err) {
+                    const currentModel = models.find(m => m.id === model.id);
+                    if (currentModel) {
+                        currentModel.response = `❌ 异常：${err.message}`;
+                        currentModel.time = null;
+                        currentModel.status = 'error';
+                        currentModel.raw = null;
+                        updateCardResponse(currentModel.id);
+                    }
+                }
+            });
+
+            await Promise.allSettled(tasks);
+            isSending = false;
+            sendAllBtn.disabled = false;
+            globalStatus.textContent = '✅ 全部完成';
+            renderAll();
+        }
+
+        // ================================================================
+        // 6. 调用单个模型API
+        // ================================================================
+        async function callModelAPI(model, prompt) {
+            const { base, model: modelId, key, providerKey } = model;
+            if (!key || key.trim().length < 4) {
+                return { success: false, error: 'API Key 无效或为空' };
+            }
+
+            let url = base;
+            const headers = { 'Content-Type': 'application/json' };
+            let body = {};
+
+            const isGemini = providerKey === 'gemini' || modelId.includes('gemini') || base.includes('generativelanguage.googleapis.com');
+            const isClaude = providerKey === 'claude' || base.includes('anthropic.com');
+            const isErnie = providerKey === 'ernie' || base.includes('aip.baidubce.com');
+            const isAgnesImage = providerKey === 'agnes_image' || base.includes('/images/generations');
+            const isAgnesVideo = providerKey === 'agnes_video' || base.includes('/videos');
+
+            if (isErnie) {
+                url = base + modelId;
+                headers['Authorization'] = `Bearer ${key.trim()}`;
+                body = { messages: [{ role: 'user', content: prompt }], temperature: 0.8 };
+            } else if (isGemini) {
+                url = base.replace('MODEL_ID', modelId).replace('API_KEY', key.trim());
+                if (!url.includes('?key=')) url = base + '?key=' + key.trim();
+                body = { contents: [{ parts: [{ text: prompt }] }] };
+            } else if (isClaude) {
+                headers['x-api-key'] = key.trim();
+                headers['anthropic-version'] = '2023-06-01';
+                body = { model: modelId, messages: [{ role: 'user', content: prompt }], max_tokens: 500 };
+            } else if (isAgnesImage) {
+                headers['Authorization'] = `Bearer ${key.trim()}`;
+                body = { model: modelId, prompt: prompt, size: '1024x768', extra_body: { response_format: 'url' } };
+            } else if (isAgnesVideo) {
+                headers['Authorization'] = `Bearer ${key.trim()}`;
+                body = { model: modelId, prompt: prompt, width: 1152, height: 768, num_frames: 121, frame_rate: 24 };
+            } else {
+                // OpenAI 风格
+                headers['Authorization'] = `Bearer ${key.trim()}`;
+                body = { model: modelId, messages: [{ role: 'user', content: prompt }], max_tokens: 500 };
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(body)
+                });
+                const contentType = response.headers.get('content-type') || '';
+                let data;
+                if (contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    return { success: false, error: `非JSON响应 (HTTP ${response.status}): ${text.slice(0, 80)}`, rawData: { text } };
+                }
+                if (!response.ok) {
+                    let errMsg = data?.error?.message || data?.error || data?.message || `HTTP ${response.status}`;
+                    if (response.status === 401) errMsg = '认证失败 (401) - 请检查API Key';
+                    else if (response.status === 404) errMsg = '接口不存在 (404) - 请检查Base URL';
+                    else if (response.status === 429) errMsg = '请求频率过高 (429) - 请稍后再试';
+                    else if (response.status === 500) errMsg = '服务器内部错误 (500)';
+                    return { success: false, error: errMsg, rawData: data };
+                }
+
+                let reply = '';
+                if (isGemini) reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                else if (isClaude) reply = data?.content?.[0]?.text || '';
+                else if (isErnie) reply = data?.result || '';
+                else if (isAgnesImage || isAgnesVideo) {
+                    reply = (isAgnesImage && data?.data?.length) ? `生成了 ${data.data.length} 张图片` :
+                            (isAgnesVideo && data?.video_id) ? `视频生成已提交，ID: ${data.video_id}` : '生成任务已提交';
+                } else {
+                    const choice = data?.choices?.[0];
+                    if (choice?.message) {
+                        reply = choice.message.reasoning_content || choice.message.content || '';
+                    } else {
+                        reply = '';
+                    }
+                }
+                if (!reply) {
+                    return { success: false, error: 'API返回内容为空', rawData: data };
+                }
+                return { success: true, reply: reply || '（成功但无内容）', rawData: data };
+            } catch (err) {
+                if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+                    return { success: false, error: '网络请求失败，可能是CORS限制或API不可达。建议安装CORS插件或使用代理。' };
+                }
+                return { success: false, error: err.message || '未知错误' };
+            }
+        }
+
+        function updateCardResponse(modelId) {
+            const model = models.find(m => m.id === modelId);
+            if (!model) return;
+            const el = document.getElementById(`response-${modelId}`);
+            if (!el) return;
+            const isAgnes = model.providerKey && (model.providerKey.startsWith('agnes') || model.providerKey === 'doubao');
+            el.innerHTML = isAgnes ? generateAgnesResponseHTML(model) : generateDefaultResponseHTML(model);
+            saveToLocalStorage();
+        }
+
+        // ================================================================
+        // 7. 导出 Excel
+        // ================================================================
+        function exportExcel() {
+            if (models.length === 0) { alert('没有模型可导出'); return; }
+            const data = models.map((m, idx) => ({
+                '序号': idx + 1,
+                '模型名称': m.name,
+                '厂商': m.providerLabel || '',
+                '区域': m.region === 'cn' ? '国产' : '国外',
+                '星级': '⭐'.repeat(Math.min(m.starRating || 3, 5)),
+                '模型标识': m.model,
+                'API Key': m.key ? (m.key.length > 8 ? m.key.slice(0,4) + '****' + m.key.slice(-4) : '****') : '',
+                '状态': m.status === 'success' ? '成功' : m.status === 'error' ? '失败' : m.status === 'loading' ? '请求中' : '待命',
+                '响应时间(秒)': m.time || '',
+                '回复内容摘要': m.response ? (m.response.length > 50 ? m.response.slice(0,50) + '…' : m.response) : '',
+                '启用': m.enabled ? '是' : '否'
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'LLM模型');
+            XLSX.writeFile(wb, `LLM_Models_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        // ================================================================
+        // 8. 数据导入/导出（JSON）
+        // ================================================================
+        function exportData() {
+            const data = {
+                models: models.map(m => ({
+                    id: m.id,
+                    name: m.name,
+                    base: m.base,
+                    model: m.model,
+                    key: m.key,
+                    providerKey: m.providerKey,
+                    providerLabel: m.providerLabel,
+                    region: m.region,
+                    starRating: m.starRating,
+                    enabled: m.enabled,
+                    response: m.response,
+                    time: m.time,
+                    status: m.status,
+                    expandedConfig: m.expandedConfig,
+                    raw: m.raw
+                })),
+                nextId: nextId,
+                version: 'v15.0',
+                exportedAt: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `llm_data_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            globalStatus.textContent = '✅ 数据已导出';
+            setTimeout(updateGlobalStatus, 2000);
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        if (!data.models || !Array.isArray(data.models)) { alert('无效的数据文件'); return; }
+                        if (!confirm('导入将覆盖当前所有数据，确定吗？')) return;
+                        models = data.models.map(m => ({
+                            ...m,
+                            expandedConfig: m.expandedConfig || false,
+                            raw: m.raw || null,
+                            region: m.region || 'global',
+                            starRating: m.starRating || 3
+                        }));
+                        nextId = data.nextId || Date.now();
+                        renderAll();
+                        globalStatus.textContent = '✅ 数据导入成功';
+                        setTimeout(updateGlobalStatus, 2000);
+                    } catch (err) { alert('解析文件失败: ' + err.message); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // ================================================================
+        // 9. 模态框
+        // ================================================================
+        function openModal(presetId = null, editModel = null) {
+            modalOverlay.classList.add('active');
+            if (editModel) {
+                modalTitle.textContent = '编辑模型';
+                modalModelName.value = editModel.name;
+                modalBaseUrl.value = editModel.base;
+                modalModelId.value = editModel.model;
+                modalApiKey.value = editModel.key;
+                editingModelId = editModel.id;
+                modalPreset.value = '';
+            } else {
+                modalTitle.textContent = '添加新模型';
+                modalModelName.value = '';
+                modalBaseUrl.value = '';
+                modalModelId.value = '';
+                modalApiKey.value = '';
+                editingModelId = null;
+                if (presetId && PRESETS[presetId]) {
+                    const p = PRESETS[presetId];
+                    modalModelName.value = p.name;
+                    modalBaseUrl.value = p.base;
+                    modalModelId.value = p.model;
+                    modalApiKey.value = p.key;
+                    modalPreset.value = presetId;
+                } else {
+                    modalPreset.value = '';
+                }
+            }
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            editingModelId = null;
+        }
+
+        function saveModelFromModal() {
+            const name = modalModelName.value.trim();
+            const base = modalBaseUrl.value.trim();
+            const modelId = modalModelId.value.trim();
+            const key = modalApiKey.value.trim();
+            if (!name || !base || !modelId) { alert('请填写完整信息'); return; }
+            if (editingModelId !== null) {
+                const model = models.find(m => m.id === editingModelId);
+                if (model) {
+                    model.name = name;
+                    model.base = base;
+                    model.model = modelId;
+                    model.key = key;
+                }
+            } else {
+                models.push({
+                    id: nextId++,
+                    name: name,
+                    base: base,
+                    model: modelId,
+                    key: key,
+                    providerKey: '',
+                    providerLabel: '',
+                    region: 'global',
+                    starRating: 3,
+                    enabled: true,
+                    response: '',
+                    time: null,
+                    status: 'idle',
+                    expandedConfig: false,
+                    raw: null
+                });
+            }
+            renderAll();
+            closeModal();
+        }
+
+        // ================================================================
+        // 10. 事件绑定
+        // ================================================================
+        sendAllBtn.addEventListener('click', sendToAll);
+        globalPrompt.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendToAll(); }
+        });
+
+        resetAllBtn.addEventListener('click', () => {
+            if (!confirm('重置将恢复默认模型列表，并清除本地数据，确定？')) return;
+            localStorage.removeItem(STORAGE_KEY);
+            initDefaultModels();
+            renderAll();
+            globalStatus.textContent = '🔄 已重置';
+            setTimeout(updateGlobalStatus, 2000);
+        });
+
+        clearAllResponsesBtn.addEventListener('click', () => {
+            models.forEach(m => { m.response = ''; m.time = null; m.status = 'idle'; m.raw = null; });
+            renderAll();
+            globalStatus.textContent = '🗑️ 已清空回复';
+            setTimeout(updateGlobalStatus, 2000);
+        });
+
+        addModelBtn.addEventListener('click', () => openModal());
+
+        expandAllConfigBtn.addEventListener('click', () => {
+            models.forEach(m => m.expandedConfig = true);
+            renderCards();
+        });
+        collapseAllConfigBtn.addEventListener('click', () => {
+            models.forEach(m => m.expandedConfig = false);
+            renderCards();
+        });
+
+        let leftCollapsed = false;
+        const toggleLeft = () => {
+            leftCollapsed = !leftCollapsed;
+            leftSidebar.classList.toggle('collapsed', leftCollapsed);
+            collapseLeftBtn.textContent = leftCollapsed ? '▶' : '◀';
+            leftExpandBtn.style.display = leftCollapsed ? 'block' : 'none';
+        };
+        collapseLeftBtn.addEventListener('click', toggleLeft);
+        leftExpandBtn.addEventListener('click', toggleLeft);
+        leftExpandBtn.style.display = 'none';
+
+        let rightCollapsed = false;
+        const toggleRight = () => {
+            rightCollapsed = !rightCollapsed;
+            rightSidebar.classList.toggle('collapsed', rightCollapsed);
+            collapseRightBtn.textContent = rightCollapsed ? '◀' : '▶';
+            rightExpandBtn.style.display = rightCollapsed ? 'block' : 'none';
+        };
+        collapseRightBtn.addEventListener('click', toggleRight);
+        rightExpandBtn.addEventListener('click', toggleRight);
+        rightExpandBtn.style.display = 'none';
+
+        exportExcelBtn.addEventListener('click', exportExcel);
+        exportDataBtn.addEventListener('click', exportData);
+        importDataBtn.addEventListener('click', importData);
+
+        modalPreset.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val && PRESETS[val]) {
+                const p = PRESETS[val];
+                modalModelName.value = p.name;
+                modalBaseUrl.value = p.base;
+                modalModelId.value = p.model;
+                modalApiKey.value = p.key;
+            }
+        });
+        modalCancelBtn.addEventListener('click', closeModal);
+        modalSaveBtn.addEventListener('click', saveModelFromModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && modalOverlay.classList.contains('active')) {
+                e.preventDefault();
+                saveModelFromModal();
+            }
+        });
+
+        window.copyToClipboard = copyToClipboard;
+
+        // ================================================================
+        // 11. 初始化默认模型（包含所有厂商）
+        // ================================================================
+        function initDefaultModels() {
+            const defaultProviders = [
+                // 国产
+                { key: 'deepseek', model: 'deepseek-v4-pro' },
+                { key: 'qwen', model: 'qwen3.7-max' },
+                { key: 'glm', model: 'glm-5.2' },
+                { key: 'doubao', model: 'Doubao-Seed-2.1-Pro' },
+                { key: 'ernie', model: 'ERNIE-5.1' },
+                { key: 'kimi', model: 'kimi-k2.7-code' },
+                { key: 'minimax', model: 'MiniMax-M3' },
+                { key: 'stepfun', model: 'step-3.7-flash' },
+                { key: 'yi', model: 'Yi-Large-Turbo' },
+                // 国外
+                { key: 'agnes', model: 'agnes-2.0-flash' },
+                { key: 'agnes_image', model: 'agnes-image-2.0-flash' },
+                { key: 'agnes_video', model: 'agnes-video-v2.0' },
+                { key: 'mistral', model: 'mistral-large-latest' },
+                { key: 'chatgpt', model: 'gpt-5.6-sol' },
+                { key: 'gemini', model: 'gemini-3.5-flash' },
+                { key: 'claude', model: 'claude-fable-5' }
+            ];
+
+            models = defaultProviders.map((item) => {
+                const p = PROVIDER_MODELS[item.key];
+                return {
+                    id: nextId++,
+                    name: p.label,
+                    base: p.base,
+                    model: item.model,
+                    key: '',
+                    providerKey: item.key,
+                    providerLabel: p.label,
+                    region: p.region || 'global',
+                    starRating: p.starRating || 3,
+                    enabled: true,
+                    response: '',
+                    time: null,
+                    status: 'idle',
+                    expandedConfig: false,
+                    raw: null
+                };
+            });
+        }
+
+        // ================================================================
+        // 12. 启动
+        // ================================================================
+        const loaded = loadFromLocalStorage();
+        if (!loaded) { initDefaultModels(); }
+        renderAll();
+        globalStatus.textContent = loaded ? '✅ 数据已从本地恢复' : '就绪';
+        console.log('🧠 LLM 对比平台 v15.0 已启动 (全模型恢复 + 国产新势力)');
+        console.log('📋 所有模型已恢复，Agnes 全模态 + 国外全系列 + 国产全系列');
+
+        window.__debug = { models, saveToLocalStorage, loadFromLocalStorage };
+
+    })();
+    </script>
+
+</body>
+</html>

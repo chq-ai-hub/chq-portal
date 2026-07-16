@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CHQ Portal - Richard Chen (ChenHongQiang) 研发知识库">
+  <meta name="author" content="Richard Chen (ChenHongQiang)">
+  <meta name="copyright" content="Copyright © 2026 CHQ Company. All rights reserved.">
+  <title>登录 - CHQ Portal</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/login.css">
+</head>
+<body class="login-page">
+  <!-- Dynamic aurora background -->
+  <canvas id="aurora-canvas" class="login-bg-canvas"></canvas>
+
+  <!-- Login card -->
+  <div class="login-card" id="login-card">
+    <div class="login-brand">
+      <div class="login-logo">C</div>
+      <h1 class="text-gradient">CHQ Portal</h1>
+      <p>Richard Chen 研发知识库</p>
+    </div>
+
+    <form class="login-form" id="login-form" autocomplete="off">
+      <div class="input-group">
+        <label for="username">用户名</label>
+        <input 
+          type="text" 
+          id="username" 
+          class="input-field" 
+          placeholder="请输入用户名"
+          required
+          autofocus
+        >
+      </div>
+
+      <div class="input-group">
+        <label for="password">密码</label>
+        <input 
+          type="password" 
+          id="password" 
+          class="input-field" 
+          placeholder="请输入密码"
+          required
+        >
+      </div>
+
+      <div class="login-options">
+        <label class="remember-me">
+          <input type="checkbox" id="remember">
+          <span>记住我</span>
+        </label>
+        <a href="#" class="forgot-link" onclick="alert('请联系管理员重置密码'); return false;">忘记密码？</a>
+      </div>
+
+      <button type="submit" class="btn btn-primary login-btn" id="login-btn">
+        <span>登 录</span>
+      </button>
+    </form>
+
+    <div class="login-divider">OR</div>
+
+    <div class="login-footer">
+      <p>Copyright © 2026 CHQ Company. All rights reserved.</p>
+      <p class="copyright">Author & Principal Architect: Richard Chen (ChenHongQiang)</p>
+    </div>
+  </div>
+
+  <!-- Hint badge -->
+  <div class="login-hint">
+    默认账号: <code>admin</code> / 密码: <code>password</code>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/effects.js"></script>
+  <script>
+    (function() {
+      const form = document.getElementById('login-form');
+      const card = document.getElementById('login-card');
+      const btn = document.getElementById('login-btn');
+      const toastContainer = document.getElementById('toast-container');
+
+      function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        toastContainer.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 400);
+        }, 2500);
+      }
+
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const remember = document.getElementById('remember').checked;
+
+        if (!username || !password) {
+          showToast('请输入用户名和密码', 'error');
+          return;
+        }
+
+        btn.classList.add('loading');
+        btn.innerHTML = '<div class="spinner"></div>';
+
+        const result = await CHQAuth.login(username, password, remember);
+
+        btn.classList.remove('loading');
+        btn.innerHTML = '<span>登 录</span>';
+
+        if (result.success) {
+          showToast(result.message, 'success');
+          setTimeout(() => {
+            window.location.href = 'main.html';
+          }, 500);
+        } else {
+          card.classList.remove('error');
+          void card.offsetWidth; // Trigger reflow
+          card.classList.add('error');
+          showToast(result.message, 'error');
+        }
+      });
+
+      // Remove error class after animation
+      card.addEventListener('animationend', () => {
+        card.classList.remove('error');
+      });
+    })();
+  </script>
+</body>
+</html>

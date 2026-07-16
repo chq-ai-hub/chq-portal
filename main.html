@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CHQ Portal - Richard Chen (ChenHongQiang) 研发知识库">
+  <meta name="author" content="Richard Chen (ChenHongQiang)">
+  <meta name="copyright" content="Copyright © 2026 CHQ Company. All rights reserved.">
+  <title>CHQ Portal - 研发知识库</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/portal.css">
+</head>
+<body class="portal-page">
+  <!-- Authentication check -->
+  <script>CHQAuth && CHQAuth.requireAuth();</script>
+
+  <!-- Top Navigation -->
+  <header class="top-nav">
+    <div class="nav-left">
+      <button class="nav-btn" id="sidebar-toggle" title="切换侧边栏">☰</button>
+      <div class="nav-brand">
+        <div class="nav-brand-logo">C</div>
+        <span class="nav-brand-text text-gradient">CHQ Portal</span>
+      </div>
+      <div class="nav-divider"></div>
+      <nav class="breadcrumb" id="breadcrumb">
+        <span class="bc-item">CHQ Portal</span>
+      </nav>
+    </div>
+
+    <div class="nav-right">
+      <div class="clock-widget" id="clock-widget">
+        <span class="clock-time">--:--</span>
+        <span class="clock-date">--月--日</span>
+      </div>
+      <button class="nav-btn" id="theme-toggle" title="切换主题">◐</button>
+      <div class="nav-user">
+        <div class="user-avatar">R</div>
+        <span id="nav-username">Admin</span>
+      </div>
+      <button class="nav-btn" onclick="CHQAuth.logout()" title="退出登录">⎋</button>
+    </div>
+  </header>
+
+  <!-- Main Body -->
+  <div class="portal-body">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            id="search-input"
+            placeholder="搜索页面..."
+            oninput="Router.search(this.value)"
+          >
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- Dynamically populated -->
+      </nav>
+      <div class="sidebar-footer">
+        CHQ Portal v1.0.0 · <span id="total-pages">0</span> 个页面
+      </div>
+    </aside>
+
+    <!-- Content Area -->
+    <main class="content-area">
+      <!-- Toolbar -->
+      <div class="content-toolbar">
+        <div class="toolbar-left">
+          <div class="page-info">
+            <span class="page-title" id="page-title">加载中...</span>
+            <div class="page-meta">
+              <span id="page-version"></span>
+              <span id="page-date"></span>
+            </div>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <button class="toolbar-btn" id="btn-prev" onclick="Router.prev()">
+            <span>←</span> 上一页
+          </button>
+          <button class="toolbar-btn primary" id="btn-next" onclick="Router.next()">
+            下一页 <span>→</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-bar-wrapper">
+        <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+      </div>
+
+      <!-- Iframe container -->
+      <div class="iframe-container">
+        <div class="page-loader" id="page-loader">
+          <div class="spinner"></div>
+          <span class="page-loader-text">正在加载页面...</span>
+        </div>
+        <iframe id="content-frame" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+      </div>
+    </main>
+  </div>
+
+  <!-- Bottom Bar -->
+  <footer class="bottom-bar">
+    <div class="pagination-info">
+      <span>页面</span>
+      <span class="current" id="current-page">1</span>
+      <span>/</span>
+      <span id="total-pages-bottom">1</span>
+    </div>
+    <div class="keyboard-hints">
+      <div class="key-hint">
+        <kbd>←</kbd><kbd>→</kbd> 翻页
+      </div>
+      <div class="key-hint">
+        <kbd>Shift</kbd> + 滚轮
+      </div>
+      <div class="key-hint">
+        <kbd>T</kbd> 主题
+      </div>
+    </div>
+    <div>
+      © 2026 CHQ Company · Richard Chen (ChenHongQiang)
+    </div>
+  </footer>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/pages.js"></script>
+  <script src="assets/js/router.js"></script>
+  <script src="assets/js/effects.js"></script>
+  <script>
+    (function() {
+      // Set username
+      const user = CHQAuth.getCurrentUser();
+      document.getElementById('nav-username').textContent = user;
+
+      // Sidebar toggle
+      const sidebar = document.getElementById('sidebar');
+      const sidebarToggle = document.getElementById('sidebar-toggle');
+      let sidebarOpen = true;
+      
+      sidebarToggle.addEventListener('click', () => {
+        sidebarOpen = !sidebarOpen;
+        sidebar.classList.toggle('collapsed', !sidebarOpen);
+      });
+
+      // Sync total pages count
+      const syncTotal = () => {
+        const pages = Router.getPages ? Router.getPages() : [];
+        const els = document.querySelectorAll('#total-pages, #total-pages-bottom');
+        els.forEach(el => el.textContent = pages.length);
+      };
+
+      // Listen for router init
+      const checkInit = setInterval(() => {
+        if (Router.getPages) {
+          syncTotal();
+          clearInterval(checkInit);
+        }
+      }, 100);
+
+      // T key for theme toggle
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.key === 't' || e.key === 'T') {
+          CHQEffects.ThemeManager.toggle();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
