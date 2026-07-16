@@ -6,6 +6,21 @@
 
 ---
 
+## [v1.2.0] - 2026-07-16
+
+### 新增
+- LLM 对比平台 v15.0 全面适配 CHQ Portal 深色主题（v15.1.0 CHQ Portal Edition）
+- 新增 Toast 通知系统（金色毛玻璃风格），替代部分 alert 弹窗
+- 新增 ESC 键关闭模态框快捷键
+- 新增 postMessage 主题同步机制（iframe 与父页面 Portal 双向通信）
+
+### 优化
+- LLM 平台 CSS 全部改用 CSS Variables，支持动态主题切换
+- 颜色映射：浅色 slate/blue 体系 → 深色 gold/indigo 高端体系
+- 保留所有原有功能逻辑零破坏
+
+---
+
 ## [v1.1.1] - 2026-07-16
 
 ### 修复
