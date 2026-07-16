@@ -61,7 +61,7 @@
         <!-- Dynamically populated -->
       </nav>
       <div class="sidebar-footer">
-        CHQ Portal v1.0.0 · <span id="total-pages">0</span> 个页面
+        CHQ Portal v1.1.1 · <span id="total-pages">0</span> 个页面
       </div>
     </aside>
 
@@ -79,10 +79,10 @@
           </div>
         </div>
         <div class="toolbar-right">
-          <button class="toolbar-btn" id="btn-prev" onclick="Router.prev()">
+          <button class="toolbar-btn" id="btn-prev" onclick="Router.prev()" data-icon="←">
             <span>←</span> 上一页
           </button>
-          <button class="toolbar-btn primary" id="btn-next" onclick="Router.next()">
+          <button class="toolbar-btn primary" id="btn-next" onclick="Router.next()" data-icon="→">
             下一页 <span>→</span>
           </button>
         </div>
@@ -145,11 +145,36 @@
       const sidebar = document.getElementById('sidebar');
       const sidebarToggle = document.getElementById('sidebar-toggle');
       let sidebarOpen = true;
-      
-      sidebarToggle.addEventListener('click', () => {
-        sidebarOpen = !sidebarOpen;
-        sidebar.classList.toggle('collapsed', !sidebarOpen);
-      });
+
+      // Mobile overlay
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        sidebar.classList.add('collapsed');
+        sidebarOpen = false;
+
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'sidebar-overlay';
+        overlay.id = 'sidebar-overlay';
+        document.querySelector('.portal-body').appendChild(overlay);
+
+        overlay.addEventListener('click', () => {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('active');
+          sidebarOpen = false;
+        });
+
+        sidebarToggle.addEventListener('click', () => {
+          sidebarOpen = !sidebarOpen;
+          sidebar.classList.toggle('open', sidebarOpen);
+          overlay.classList.toggle('active', sidebarOpen);
+        });
+      } else {
+        sidebarToggle.addEventListener('click', () => {
+          sidebarOpen = !sidebarOpen;
+          sidebar.classList.toggle('collapsed', !sidebarOpen);
+        });
+      }
 
       // Sync total pages count
       const syncTotal = () => {

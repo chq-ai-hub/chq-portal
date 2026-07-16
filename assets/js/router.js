@@ -10,6 +10,19 @@ const Router = {
   currentIndex: 0,
   categories: new Set(),
 
+  // Track collapsed categories
+  collapsedCategories: new Set(),
+
+  // Toggle category expand/collapse
+  toggleCategory(cat) {
+    if (this.collapsedCategories.has(cat)) {
+      this.collapsedCategories.delete(cat);
+    } else {
+      this.collapsedCategories.add(cat);
+    }
+    this.renderSidebar();
+  },
+
   // Initialize router
   async init() {
     await this.loadPages();
@@ -64,13 +77,15 @@ const Router = {
     const cats = Array.from(this.categories);
     let html = '';
 
-    cats.forEach(cat => {
+    cats.forEach((cat, catIdx) => {
       const catPages = this.pages.filter(p => (p.category || '未分类') === cat);
+      const isCollapsed = this.collapsedCategories && this.collapsedCategories.has(cat);
       html += `
-        <div class="nav-category">
-          <div class="nav-category-title">
+        <div class="nav-category ${isCollapsed ? 'collapsed' : ''}" data-category="${this.escapeHtml(cat)}">
+          <div class="nav-category-title" onclick="Router.toggleCategory('${this.escapeHtml(cat)}')">
             <span class="nav-category-icon">◆</span>
             <span>${this.escapeHtml(cat)}</span>
+            <span class="toggle-icon">▼</span>
           </div>
           <div class="nav-pages">
             ${catPages.map((page, idx) => {
